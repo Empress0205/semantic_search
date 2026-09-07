@@ -151,7 +151,7 @@ export function SemanticSearch() {
                 id="threshold"
                 type="range"
                 min="0"
-                max="0.8"
+                max="0.7"
                 step="0.05"
                 value={threshold}
                 onChange={(event) => setThreshold(Number(event.target.value))}

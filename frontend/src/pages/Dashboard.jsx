@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState.jsx'
 import { HowItWorks } from '../components/HowItWorks.jsx'
@@ -16,12 +16,21 @@ import {
 } from '../components/Icons.jsx'
 import { useNotes } from '../context/NotesContext.jsx'
 import { EMBEDDING_DIMENSIONS, USER } from '../config.js'
-import { formatRelative, greetingFor } from '../utils/format.js'
+import { formatRelative, greetingFor, msUntilNextGreeting } from '../utils/format.js'
 
 export function Dashboard() {
   const { notes, collections, loading, history, searchCount } = useNotes()
   const [query, setQuery] = useState('')
+  const [greeting, setGreeting] = useState(greetingFor)
   const navigate = useNavigate()
+
+  // The greeting is picked once per render, so a dashboard left open overnight
+  // would keep yesterday's wording. Wake up on each boundary instead of
+  // polling, then schedule the one after it.
+  useEffect(() => {
+    const timer = setTimeout(() => setGreeting(greetingFor()), msUntilNextGreeting())
+    return () => clearTimeout(timer)
+  }, [greeting])
 
   const runSearch = (event) => {
     event.preventDefault()
@@ -37,7 +46,7 @@ export function Dashboard() {
       <header className="page-head">
         <div>
           <h1 className="greeting">
-            {greetingFor()}, {USER.name} <span aria-hidden="true">👋</span>
+            {greeting}, {USER.name} <span aria-hidden="true">👋</span>
           </h1>
           <p className="page-sub">Capture your ideas and find them by meaning.</p>
         </div>

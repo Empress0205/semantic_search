@@ -40,6 +40,17 @@ DISTANCE_METRIC = _get("DISTANCE_METRIC", "cosine")
 DEFAULT_N_RESULTS = int(_get("DEFAULT_N_RESULTS", "5"))
 MAX_N_RESULTS = int(_get("MAX_N_RESULTS", "50"))
 
+# A threshold drops results after the vector store has already chosen its
+# nearest N, so asking for exactly N would hand back fewer than requested.
+# Over-fetching by this factor gives the filter something to discard.
+SEARCH_OVERFETCH = int(_get("SEARCH_OVERFETCH", "3"))
+
+# Floor for "related notes". There is no query to judge relevance against, so
+# the panel is better left empty than filled with unrelated notes. Scores from
+# all-MiniLM-L6-v2 are compressed — same-topic notes land around 0.4-0.5 — so
+# this sits just below that.
+RELATED_MIN_SCORE = float(_get("RELATED_MIN_SCORE", "0.35"))
+
 # --- API ---------------------------------------------------------------------
 
 # The Vite dev server proxies /api to this service, so the browser stays on one

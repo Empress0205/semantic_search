@@ -11,7 +11,6 @@ Run it with:  uvicorn app.main:app --reload
 """
 
 from contextlib import asynccontextmanager
-
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field

@@ -14,8 +14,11 @@ venv/
 .env.local
 
 # Vector store / generated data
-data/chroma/
-chroma_data/
+# Leading ** so the store is ignored wherever it sits: a pattern containing a
+# slash is anchored to this file's directory, so a bare data/chroma/ would miss
+# backend/data/chroma/.
+**/data/chroma/
+**/chroma_data/
 
 # Node / frontend
 node_modules/

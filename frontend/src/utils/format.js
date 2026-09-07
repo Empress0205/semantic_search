@@ -27,9 +27,23 @@ export function formatRelative(iso) {
 
 export function greetingFor(date = new Date()) {
   const hour = date.getHours()
+  // The small hours count as night rather than morning — midnight is hour 0,
+  // so a plain `hour < 12` greets anyone working late with "Good morning".
+  if (hour < 5) return 'Still up'
   if (hour < 12) return 'Good morning'
   if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
+  if (hour < 22) return 'Good evening'
+  return 'Good night'
+}
+
+/** Milliseconds until the greeting would next change. */
+export function msUntilNextGreeting(date = new Date()) {
+  const boundaries = [5, 12, 18, 22, 24]
+  const next = boundaries.find((hour) => hour > date.getHours())
+
+  const at = new Date(date)
+  at.setHours(next, 0, 0, 0)
+  return at.getTime() - date.getTime()
 }
 
 export function initialsOf(name) {

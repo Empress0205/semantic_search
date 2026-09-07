@@ -104,7 +104,6 @@ class ChromaDBService:
             n_results=n_results,
             include=["documents", "distances", "metadatas"],
         )
-
         return [
             {
                 "id": document_id,

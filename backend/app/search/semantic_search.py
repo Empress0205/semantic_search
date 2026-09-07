@@ -4,7 +4,13 @@ The vector store returns distances; the interface wants a relevance score. The
 conversion lives here so the rest of the app only ever deals with a 0-1 score.
 """
 
-from app.config import DEFAULT_N_RESULTS, DISTANCE_METRIC, MAX_N_RESULTS
+from app.config import (
+    DEFAULT_N_RESULTS,
+    DISTANCE_METRIC,
+    MAX_N_RESULTS,
+    RELATED_MIN_SCORE,
+    SEARCH_OVERFETCH,
+)
 from app.documents.document_service import _to_note
 
 
@@ -37,8 +43,12 @@ class SemanticSearch:
 
         n_results = max(1, min(n_results, MAX_N_RESULTS))
 
+        # The threshold filters what the store has already returned, so a plain
+        # request would come back short. Ask for more, then trim to size.
+        fetch = n_results * SEARCH_OVERFETCH if threshold > 0 else n_results
+
         results = []
-        for record in self.db.query(query, n_results=n_results):
+        for record in self.db.query(query, n_results=fetch):
             score = _to_similarity(record["distance"])
             if score < threshold:
                 continue
@@ -51,14 +61,21 @@ class SemanticSearch:
         # Chroma returns nearest-first already; sorting keeps the guarantee
         # explicit and independent of that.
         results.sort(key=lambda note: note["score"], reverse=True)
-        return results
+        return results[:n_results]
 
-    def related(self, note_id, n_results=3):
-        """Notes semantically closest to an existing note, excluding itself."""
+    def related(self, note_id, n_results=3, threshold=RELATED_MIN_SCORE):
+        """Notes semantically closest to an existing note, excluding itself.
+
+        Unlike a search, this runs without anyone asking for it, so weak matches
+        are filtered out by default — no neighbours is a better answer than
+        three unrelated notes.
+        """
         record = self.db.get(note_id)
         if record is None:
             return []
 
         # Ask for one extra, since the note itself is its own nearest neighbour.
-        found = self.search(record["document"], n_results=n_results + 1)
+        found = self.search(
+            record["document"], n_results=n_results + 1, threshold=threshold
+        )
         return [note for note in found if note["id"] != note_id][:n_results]
