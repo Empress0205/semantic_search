@@ -1,5 +1,7 @@
 # Semantic Notes Search
 
+[![Tests](https://github.com/Empress0205/semantic_search/actions/workflows/tests.yml/badge.svg)](https://github.com/Empress0205/semantic_search/actions/workflows/tests.yml)
+
 A simple project for learning and implementing **text embeddings, semantic search, and vector databases** using Python.
 
 The project allows users to add notes and search them using natural language. Instead of relying only on exact keyword matching, the system uses embeddings to understand the semantic meaning of the text and retrieve similar notes.
@@ -58,27 +60,30 @@ The project will be developed using:
 ```text
 semantic-notes/
 │
-├── app/
-│   ├── __init__.py
+├── backend/
+│   ├── app/
+│   │   ├── main.py                 FastAPI app and routes
+│   │   ├── config.py               Settings, read from backend/.env
+│   │   │
+│   │   ├── database/
+│   │   │   └── chroma_db.py        ChromaDB collection wrapper
+│   │   │
+│   │   ├── embeddings/
+│   │   │   └── embedding_service.py  Sentence Transformer
+│   │   │
+│   │   ├── documents/
+│   │   │   └── document_service.py   Note CRUD + metadata
+│   │   │
+│   │   └── search/
+│   │       └── semantic_search.py    Query -> ranked notes
 │   │
-│   ├── main.py                     FastAPI app and routes
-│   ├── config.py                   Settings, read from .env
+│   ├── tests/                      Automated suite (pytest, no model needed)
+│   ├── examples/                   Print-only learning scripts
 │   │
-│   ├── database/
-│   │   ├── __init__.py
-│   │   └── chroma_db.py            ChromaDB collection wrapper
-│   │
-│   ├── embeddings/
-│   │   ├── __init__.py
-│   │   └── embedding_service.py    Sentence Transformer
-│   │
-│   ├── documents/
-│   │   ├── __init__.py
-│   │   └── document_service.py     Note CRUD + metadata
-│   │
-│   └── search/
-│       ├── __init__.py
-│       └── semantic_search.py      Query -> ranked notes
+│   ├── conftest.py                 Puts backend/ on sys.path
+│   ├── pytest.ini
+│   ├── requirements-dev.txt        pytest, httpx
+│   └── .env.example
 │
 ├── frontend/                       React interface (see frontend/README.md)
 │
@@ -86,13 +91,9 @@ semantic-notes/
 │   └── seed_notes.py               Load sample notes
 │
 ├── data/
-│   └── chroma/                     Vector store (generated)
+│   └── chroma/                     Vector store (generated, git-ignored)
 │
-├── tests/
-│   ├── test_embeddings.py
-│   └── test_search.py
-│
-├── .env.example
+├── .github/workflows/tests.yml     CI: pytest + frontend build
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -108,8 +109,17 @@ Two processes: the API and the interface.
 env\Scripts\activate            # Windows
 pip install -r requirements.txt
 python scripts/seed_notes.py    # optional: load 10 sample notes
+
+cd backend                      # uvicorn imports `app`, so start from here
 uvicorn app.main:app --reload
 ```
+
+Seeding writes to the store directly. If the API is already running it keeps
+its own view of the database open, so restart it afterwards or searches will
+fail with `Nothing found on disk`.
+
+Settings are optional: copy `backend/.env.example` to `backend/.env` to
+override any of them. It is read from `backend/`, not the repository root.
 
 The API runs on <http://127.0.0.1:8000>, with interactive documentation at
 <http://127.0.0.1:8000/docs>.
@@ -588,3 +598,21 @@ The main visual emphasis should communicate:
 
 **"Write naturally. Search by meaning."**
 
+## Testing
+
+The suite runs offline: the services take their store as a constructor
+argument, so the tests swap in an in-memory fake instead of ChromaDB and never
+load the embedding model.
+
+```bash
+pip install -r requirements.txt -r backend/requirements-dev.txt
+cd backend
+pytest
+```
+
+`backend/examples/` holds the earlier print-only learning scripts. They are
+kept out of `backend/tests/` because pytest collects by filename, and running
+them would load the model and open the real store on every run.
+
+GitHub Actions runs `pytest` and a frontend `npm run build` on every push and
+pull request — see `.github/workflows/tests.yml`.

@@ -119,7 +119,7 @@ class ChromaDBService:
             )
         ]
 
-    # --- Batch helpers (used by the learning scripts in tests/) ---------------
+    # --- Batch helpers (used by the learning scripts in examples/) ---------------
 
     def add_documents(self, documents):
         """Add a batch of plain strings. Returns the generated ids.
